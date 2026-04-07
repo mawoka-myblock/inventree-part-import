@@ -29,12 +29,12 @@ def test_error_types():
                 case 2:
                     raise HTTPError({"status_code": 500})
                 case 3:
-                    raise ConnectionError()
+                    raise ConnectionError
 
     try:
         for retry in retries(3, catch_timeouts, 0):
             with retry:
-                raise ValueError()
+                raise ValueError
     except ValueError:
         return
 

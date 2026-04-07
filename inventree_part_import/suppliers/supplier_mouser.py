@@ -6,15 +6,8 @@ from error_helper import hint, warning
 from mouser.api import MouserPartSearchRequest
 
 from ..retries import retry_timeouts
-from .base import (
-    DOMAIN_REGEX,
-    DOMAIN_SUB,
-    REMOVE_HTML_TAGS,
-    ApiPart,
-    ScrapeSupplier,
-    SupplierSupportLevel,
-    money2float,
-)
+from .base import (DOMAIN_REGEX, DOMAIN_SUB, REMOVE_HTML_TAGS, ApiPart, ScrapeSupplier,
+                   SupplierSupportLevel, money2float)
 
 class Mouser(ScrapeSupplier):
     SUPPORT_LEVEL = SupplierSupportLevel.SCRAPING

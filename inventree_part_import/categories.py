@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 
 from error_helper import info, success, warning
-from inventree.part import ParameterTemplate, PartCategory, PartCategoryParameterTemplate
+from inventree.base import ParameterTemplate
+from inventree.part import PartCategory, PartCategoryParameterTemplate
 
 from .config import (CATEGORIES_CONFIG, PARAMETERS_CONFIG, get_categories_config,
                      get_parameters_config, update_config_file)
@@ -16,18 +17,23 @@ def setup_categories_and_parameters(inventree_api):
     categories = parse_category_recursive(categories_config)
     parameters = parse_parameters(parameters_config)
 
-    used_parameters = set.union(set(), *(set(c.parameters) for c in categories.values()))
+    used_parameters = set.union(
+        set(), *(set(c.parameters) for c in categories.values())
+    )
 
     for name in parameters:
         if name not in used_parameters:
-            warning(f"parameter '{name}' is defined in {PARAMETERS_CONFIG} but not being used")
+            warning(
+                f"parameter '{name}' is defined in {PARAMETERS_CONFIG} but not being used"
+            )
     for name in used_parameters:
         if name not in parameters:
             warning(f"parameter '{name}' not defined in {PARAMETERS_CONFIG}")
             parameters[name] = Parameter(name, name, [], "")
 
     part_categories_by_pk = {
-        part_category.pk: part_category for part_category in PartCategory.list(inventree_api)
+        part_category.pk: part_category
+        for part_category in PartCategory.list(inventree_api)
     }
     part_categories = {}
     for part_category in part_categories_by_pk.values():
@@ -42,12 +48,15 @@ def setup_categories_and_parameters(inventree_api):
         if part_category is None:
             info(f"creating category '{'/'.join(category.path)}' ...")
             parent = part_categories.get(tuple(category.path[:-1]))
-            part_category = PartCategory.create(inventree_api, {
-                "name": category.name,
-                "description": category.description,
-                "structural": category.structural,
-                "parent": parent.pk if parent else None,
-            })
+            part_category = PartCategory.create(
+                inventree_api,
+                {
+                    "name": category.name,
+                    "description": category.description,
+                    "structural": category.structural,
+                    "parent": parent.pk if parent else None,
+                },
+            )
             part_categories[tuple(category.path)] = part_category
             if dry_run:
                 part_category.pathstring = "/".join(category.path)
@@ -59,7 +68,9 @@ def setup_categories_and_parameters(inventree_api):
 
         path_str = part_category.pathstring
         if category.structural and not part_category.structural:
-            warning(f"category '{path_str}' on host is not structural, but it should be")
+            warning(
+                f"category '{path_str}' on host is not structural, but it should be"
+            )
         elif not category.structural and part_category.structural:
             warning(f"category '{path_str}' on host is structural, but it shouldn't be")
 
@@ -73,7 +84,9 @@ def setup_categories_and_parameters(inventree_api):
                 break
         else:
             path_str = part_category.pathstring
-            warning(f"category '{path_str}' on host is not defined in {CATEGORIES_CONFIG}")
+            warning(
+                f"category '{path_str}' on host is not defined in {CATEGORIES_CONFIG}"
+            )
 
     parameter_templates = {
         parameter_template.name: parameter_template
@@ -85,26 +98,36 @@ def setup_categories_and_parameters(inventree_api):
 
         if not (parameter_template := parameter_templates.get(parameter.name)):
             info(f"creating parameter template '{parameter.name}' ...")
-            parameter_templates[parameter.name] = ParameterTemplate.create(inventree_api, {
-                "name": parameter.name,
-                "description": description,
-                "units": units,
-            })
-        elif description != parameter_template.description or units != parameter_template.units:
+            parameter_templates[parameter.name] = ParameterTemplate.create(
+                inventree_api,
+                {
+                    "name": parameter.name,
+                    "description": description,
+                    "units": units,
+                },
+            )
+        elif (
+            description != parameter_template.description
+            or units != parameter_template.units
+        ):
             info(f"updating parameter template '{parameter.name}' ...")
-            parameter_template.save({
-                "description": parameter.description,
-                "units": parameter.units,
-            })
+            parameter_template.save(
+                {
+                    "description": parameter.description,
+                    "units": parameter.units,
+                }
+            )
 
     category_parameters = {
-        (category, param) for category in categories.values() for param in category.parameters
+        (category, param)
+        for category in categories.values()
+        for param in category.parameters
     }
     part_category_pk_to_category = {
         category.part_category.pk: category for category in categories.values()
     }
     part_category_parameter_templates = {
-        (category, template.parameter_template_detail["name"])
+        (category, template.getTemplate()["name"])
         for template in PartCategoryParameterTemplate.list(inventree_api)
         if (category := part_category_pk_to_category.get(template.category))
     }
@@ -114,10 +137,13 @@ def setup_categories_and_parameters(inventree_api):
             category, parameter = category_parameter
             category_str = "/".join(category.path)
             info(f"creating parameter template '{parameter}' for '{category_str}' ...")
-            PartCategoryParameterTemplate.create(inventree_api, {
-                "category": category.part_category.pk,
-                "parameter_template": parameter_templates[parameter].pk,
-            })
+            PartCategoryParameterTemplate.create(
+                inventree_api,
+                {
+                    "category": category.part_category.pk,
+                    "parameter_template": parameter_templates[parameter].pk,
+                },
+            )
 
     for category, template_name in part_category_parameter_templates:
         if (category, template_name) not in category_parameters and not category.ignore:
@@ -152,6 +178,7 @@ def setup_categories_and_parameters(inventree_api):
     success("setup categories!", end="\n\n")
 
     return category_map, parameter_map
+
 
 @dataclass
 class Category:
@@ -194,9 +221,17 @@ class Category:
                     f"'{CATEGORIES_CONFIG}'"
                 )
 
+
 CATEGORY_ATTRIBUTES = {
-    "_parameters", "_omit_parameters", "_description", "_ignore", "_structural", "_aliases"
+    "_parameters",
+    "_omit_parameters",
+    "_description",
+    "_ignore",
+    "_structural",
+    "_aliases",
 }
+
+
 def parse_category_recursive(categories_dict, parent_parameters=tuple(), path=tuple()):
     if not categories_dict:
         return {}
@@ -209,12 +244,16 @@ def parse_category_recursive(categories_dict, parent_parameters=tuple(), path=tu
         if values is None:
             values = {}
         elif not isinstance(values, dict):
-            warning(f"failed to parse category '{name}' (invalid type, should be dict or null)")
+            warning(
+                f"failed to parse category '{name}' (invalid type, should be dict or null)"
+            )
             continue
 
         for child in values.keys():
             if child.startswith("_") and child not in CATEGORY_ATTRIBUTES:
-                warning(f"ignoring unknown special attribute '{child}' in category '{name}'")
+                warning(
+                    f"ignoring unknown special attribute '{child}' in category '{name}'"
+                )
 
         omitted_parameters = values.get("_omit_parameters", [])
         parameters = tuple(set(parent_parameters) - set(omitted_parameters))
@@ -236,6 +275,7 @@ def parse_category_recursive(categories_dict, parent_parameters=tuple(), path=tu
         categories.update(parse_category_recursive(values, parameters, new_path))
 
     return categories
+
 
 @dataclass
 class Parameter:
@@ -261,7 +301,10 @@ class Parameter:
             else:
                 parameter_config["_aliases"] = [alias]
 
+
 PARAMETER_ATTRIBUTES = {"_description", "_aliases", "_unit"}
+
+
 def parse_parameters(parameters_dict):
     if not parameters_dict:
         return {}
@@ -272,12 +315,15 @@ def parse_parameters(parameters_dict):
             values = {}
         elif not isinstance(values, dict):
             warning(
-                f"failed to parse parameter '{name}' (invalid type, should be dict or null)")
+                f"failed to parse parameter '{name}' (invalid type, should be dict or null)"
+            )
             continue
 
         for child in values.keys():
             if child.startswith("_") and child not in PARAMETER_ATTRIBUTES:
-                warning(f"ignoring unknown special attribute '{child}' in parameter '{name}'")
+                warning(
+                    f"ignoring unknown special attribute '{child}' in parameter '{name}'"
+                )
 
         parameters[name] = Parameter(
             name=name,
@@ -288,8 +334,11 @@ def parse_parameters(parameters_dict):
 
     return parameters
 
+
 def setup_config_from_inventree(inventree_api):
-    info(f"copying categories and parameters configuration from '{inventree_api.base_url}' ...")
+    info(
+        f"copying categories and parameters configuration from '{inventree_api.base_url}' ..."
+    )
     categories = {
         part_category.pk: {
             "name": part_category.name,
@@ -309,7 +358,9 @@ def setup_config_from_inventree(inventree_api):
             fields = {}
             if units := template.parameter_template_detail["units"]:
                 fields["_unit"] = units
-            if (desc := template.parameter_template_detail["description"]) != parameter_name:
+            if (
+                desc := template.parameter_template_detail["description"]
+            ) != parameter_name:
                 fields["_description"] = desc
             parameters[parameter_name] = fields
 

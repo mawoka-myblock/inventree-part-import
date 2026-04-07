@@ -1,6 +1,4 @@
-import inspect
-import re
-import time
+import inspect, re, time
 from dataclasses import dataclass
 from enum import IntEnum
 from functools import cache
@@ -102,7 +100,7 @@ class Supplier:
         }
 
     def search(self, search_term: str) -> tuple[list[ApiPart], int]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @cache
     def cached_search(self, search_term: str) -> tuple[list[ApiPart], int]:
@@ -145,7 +143,9 @@ class ScrapeSupplier(Supplier):
 
             self._setup_session()
 
-            fallback_url = DOMAIN_REGEX.sub(DOMAIN_SUB.format(fallback), url) if fallback else url
+            fallback_url = DOMAIN_REGEX.sub(
+    DOMAIN_SUB.format(fallback),
+     url) if fallback else url
             for retry in retry_timeouts():
                 with retry:
                     result = self.session.get(fallback_url, headers=self.extra_headers)

@@ -242,12 +242,12 @@ def inventree_part_import(
     finally:
         if failed_parts:
             failed_parts_str = "\n".join(
-                (part.name if isinstance(part, Part) else part for part in failed_parts)
+                part.name if isinstance(part, Part) else part for part in failed_parts
             )
             error(f"the following parts failed to import:\n{failed_parts_str}\n", prefix="")
         if incomplete_parts:
             incomplete_parts_str = "\n".join(
-                (part.name if isinstance(part, Part) else part for part in incomplete_parts)
+                part.name if isinstance(part, Part) else part for part in incomplete_parts
             )
             warning(f"the following parts are incomplete:\n{incomplete_parts_str}\n", prefix="")
 
@@ -322,7 +322,6 @@ class DryInvenTreeAPI(InvenTreeAPI):
 
     def __init__(self, host=None, **kwargs):
         self.base_url = "inventree/"
-        pass
 
     def get(self, url, **kwargs):
         url_split = url.strip("/").split("/")
@@ -334,10 +333,10 @@ class DryInvenTreeAPI(InvenTreeAPI):
         return {"pk": 1, "url": "", **data}
 
     def testServer(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def request(self, api_url, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def downloadFile(self, url, destination, overwrite=False, params=None, proxies=...):
-        raise NotImplementedError()
+        raise NotImplementedError

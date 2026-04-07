@@ -1,8 +1,9 @@
 import importlib
-from error_helper import error, hint
 from inspect import isclass
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+
+from error_helper import error, hint
 
 from ..config import SUPPLIERS_CONFIG, get_config, load_suppliers_config, update_config_file
 from ..inventree_helpers import Company
@@ -15,10 +16,8 @@ def search(search_term, supplier_id: str = None, only_supplier=False):
         assert _SUPPLIER_COMPANIES is not None, "call setup_supplier_companies(...) first"
         supplier_objects, _ = get_suppliers()
         assert supplier_objects.keys() == _SUPPLIER_COMPANIES.keys()
-        _SUPPLIERS = dict(zip(
-            supplier_objects.keys(),
-            zip(supplier_objects.values(), _SUPPLIER_COMPANIES.values())
-        ))
+        _SUPPLIERS = dict(zip( supplier_objects.keys(), zip(
+            supplier_objects.values(), _SUPPLIER_COMPANIES.values(), strict=False), strict=False ))
 
     suppliers = list(_SUPPLIERS.values())
     if supplier_id:
@@ -79,9 +78,9 @@ def get_suppliers(reload=False, setup=True) -> tuple[dict, dict]:
             continue
 
         supplier_classes = [
-            cls for cls in vars(module).values()
-            if isclass(cls) and cls not in (Supplier, ScrapeSupplier) and issubclass(cls, Supplier)
-        ]
+    cls for cls in vars(module).values() if isclass(cls) and cls not in (
+        Supplier, ScrapeSupplier) and issubclass(
+            cls, Supplier) ]
         if len(supplier_classes) != 1:
             suffix = "multiple Supplier classes" if supplier_classes else "no Supplier class"
             error(f"failed to load supplier module '{module_name}' ({suffix} defined)")
